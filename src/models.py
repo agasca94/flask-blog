@@ -11,7 +11,7 @@ class User(db.Model):
     password = db.Column(db.String(128), nullable=True)
     created_at = db.Column(db.DateTime)
     modified_at = db.Column(db.DateTime)
-    posts = db.relationship('Post', backref='owner', lazy=True)
+    posts = db.relationship('Post', backref='author', lazy=True)
 
     def __init__(self, name, email, password):
         self.name = name
@@ -22,9 +22,16 @@ class User(db.Model):
 
     def save(self):
         self.modified_at = datetime.datetime.now()
-        if not self.id:
-            db.session.add(self)
+        db.session.add(self)
         db.session.commit()
+
+    def update(self, **kwargs):
+        for attr, value in kwargs.items():
+            if attr == 'password':
+                self.set_password(value)
+            else:
+                setattr(self, attr, value)
+        self.save()
 
     def delete(self):
         db.session.delete(self)
