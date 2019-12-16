@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, Response
 from marshmallow import ValidationError
 from functools import wraps
 
@@ -25,6 +25,13 @@ def marshal_with_schema(schema):
         @wraps(func)
         def inner(*data, **kwargs):
             data = func(*data, **kwargs)
+            """
+            Return any custom response (commonly an error) as is,
+            without parsing it
+            """
+            if isinstance(data, dict) or isinstance(data, Response):
+                return data
+
             return schema.dump(data)
         return inner
     return decorator
