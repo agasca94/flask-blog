@@ -10,6 +10,11 @@ class PostSchema(Schema):
     modified_at = fields.DateTime(dump_only=True)
 
 
+class LoginSchema(Schema):
+    email = fields.Email(required=True, load_only=True)
+    password = fields.Str(required=True, load_only=True)
+
+
 class UserSchema(Schema):
     id = fields.Int(dump_only=True)
     name = fields.Str(required=True)
@@ -21,5 +26,6 @@ class UserSchema(Schema):
 
 
 user_schema = UserSchema()
+login_schema = LoginSchema()
 post_schema = PostSchema()
 posts_schema = PostSchema(many=True)

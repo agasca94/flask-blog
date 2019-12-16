@@ -1,8 +1,9 @@
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, jwt_required, current_user
 from src.models import User, Post
-from src.schemas import user_schema, post_schema, posts_schema
+from src.schemas import user_schema, login_schema, post_schema, posts_schema
 from src.middlewares import validate_with_schema, marshal_with_schema
+from src.utils import error_response, success_response
 
 
 class UserRegister(Resource):
@@ -10,28 +11,26 @@ class UserRegister(Resource):
     def post(self, data):
         user_in_db = User.get_by_email(data['email'])
         if user_in_db:
-            return {'error': 'Email already registered'}
+            return error_response('Email already registered')
 
         user = User(**data)
         user.save()
 
         token = create_access_token(identity=user)
 
-        return {'jwt_token': token}
+        return success_response({'token': token})
 
 
 class UserLogin(Resource):
-    @validate_with_schema(user_schema, partial=True)
+    @validate_with_schema(login_schema)
     def post(self, data):
-        if not data.get('email') or not data.get('password'):
-            return {'error': 'You need email and password to sign in'}
-        user = User.get_by_email(data.get('email'))
-        if not user:
-            return {'error': 'invalid credentials'}, 400
-        if not user.check_hash(data.get('password')):
-            return {'error': 'invalid credentials'}, 400
+        user = User.get_by_email(data['email'])
+
+        if not user or not user.check_hash(data['password']):
+            return error_response('invalid credentials')
+
         token = create_access_token(identity=user)
-        return {'token': token}
+        return success_response({'token': token})
 
 
 class UserMe(Resource):
@@ -71,16 +70,19 @@ class PostResource(Resource):
     def get(self, post_id):
         post = Post.get_one(post_id)
         if not post:
-            return {'error': 'post not found'}
+            return error_response('Post not found', 404)
+
         return post
 
     @jwt_required
     def delete(self, post_id):
         user = current_user
         post = Post.get_one(post_id)
+
         if not post:
-            return {'error': 'post not found'}
+            return error_response('Post not found', 404)
         if post.owner_id != user.id:
-            return {'error': 'permission denied'}
+            return error_response('Permission denied', 403)
+
         post.delete()
-        return {'deleted': post.id}
+        return success_response({'deleted': post.id})
