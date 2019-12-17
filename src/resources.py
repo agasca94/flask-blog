@@ -18,7 +18,7 @@ class UserRegister(Resource):
 
         token = create_access_token(identity=user)
 
-        return success_response({'token': token})
+        return success_response({'token': token}, 201)
 
 
 class UserLogin(Resource):
@@ -27,7 +27,7 @@ class UserLogin(Resource):
         user = User.get_by_email(data['email'])
 
         if not user or not user.check_hash(data['password']):
-            return error_response('invalid credentials')
+            return error_response('Invalid credentials')
 
         token = create_access_token(identity=user)
         return success_response({'token': token})
