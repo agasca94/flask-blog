@@ -1,8 +1,6 @@
 from flask_testing import TestCase
 from flask_jwt_extended import create_access_token
 from src.app import create_app, db
-from src.models import User
-import json
 
 
 class BaseTestCase(TestCase):

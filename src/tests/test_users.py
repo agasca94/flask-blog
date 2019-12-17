@@ -1,7 +1,6 @@
 import unittest
-from src.app import db
-from src.models import User
 from src.tests.base import BaseTestCase, AuthorizedTestCase
+from src.models import User
 
 
 class AuthTest(BaseTestCase):
