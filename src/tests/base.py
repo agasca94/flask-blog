@@ -23,14 +23,14 @@ class BaseTestCase(TestCase):
 
 
 class AuthorizedTestCase(BaseTestCase):
-    def authorized_get(self, url, user, body={}, headers={}, **kwargs):
+    def authorized_request(self, method, url, user, **kwargs):
         token = create_access_token(identity=user)
-        headers.update({
-            'Authorization': f"Bearer {token}"
-        })
-        return self.client.get(
-            url,
-            query_string=body,
-            headers=headers,
-            **kwargs
-        )
+        auth_header = {'Authorization': f"Bearer {token}"}
+        kwargs['headers'] = {
+            **kwargs.get('headers', {}),
+            **auth_header
+        }
+        return getattr(self.client, method)(url, **kwargs)
+
+    def authorized_get(self, *args, **kwargs):
+        return self.authorized_request('get', *args, **kwargs)
