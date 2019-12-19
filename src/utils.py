@@ -22,7 +22,7 @@ def create_response(body, status_code=200, **kwargs):
 
 def success_response(body, status_code=200, **kwargs):
     return create_response(
-        {'data': body},
+        body,
         status_code,
         **kwargs
     )

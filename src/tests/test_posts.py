@@ -21,7 +21,7 @@ class PostTest(AuthorizedTestCase):
             json=self.post,
         )
 
-        data = res.json['data']
+        data = res.json
         self.assertEqual(res.status_code, 201)
         self.assertEqual(data['title'], self.post['title'])
         self.assertEqual(data['contents'], self.post['contents'])
@@ -41,6 +41,12 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(data['contents'], self.post['contents'])
         self.assertEqual(data['author']['id'], user.id)
 
+    def test_post_not_found(self):
+        res = self.client.get(f"/posts/1")
+
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json['message'], 'Post not found')
+
     def test_post_updated(self):
         new_data = {
             'title': 'New title',
@@ -53,13 +59,13 @@ class PostTest(AuthorizedTestCase):
 
         res = self.authorized_put(f"/posts/{post.id}", user, json=new_data)
 
-        data = res.json['data']
+        data = res.json
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['title'], new_data['title'])
         self.assertEqual(data['contents'], new_data['contents'])
         self.assertEqual(data['author']['id'], user.id)
 
-    def test_post_unauthorized_updated(self):
+    def test_post_unauthorized_update(self):
         new_data = {
             'title': 'New title',
             'contents': 'New contents'
@@ -74,7 +80,7 @@ class PostTest(AuthorizedTestCase):
         res = self.authorized_put(f"/posts/{post.id}", user2, json=new_data)
 
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json['error'], 'Permission denied')
+        self.assertEqual(res.json['message'], 'Permission denied')
 
     def test_post_deleted(self):
         user = User(**self.user)
@@ -85,9 +91,9 @@ class PostTest(AuthorizedTestCase):
         res = self.authorized_delete(f"/posts/{post.id}", user)
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json['data']['deleted'], post.id)
+        self.assertEqual(res.json['deleted'], post.id)
 
-    def test_post_unauthorized_deleted(self):
+    def test_post_unauthorized_delete(self):
         user = User(**self.user)
         user.save()
         user2 = User('Another', 'another@mail.com', 'secret')
@@ -99,7 +105,7 @@ class PostTest(AuthorizedTestCase):
         res = self.authorized_delete(f"/posts/{post.id}", user2)
 
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json['error'], 'Permission denied')
+        self.assertEqual(res.json['message'], 'Permission denied')
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 from flask import request, Response
 from marshmallow import ValidationError
 from functools import wraps
+from src.exceptions import InvalidUsage
 
 
 def validate_with_schema(schema, **kwargs):
@@ -13,7 +14,7 @@ def validate_with_schema(schema, **kwargs):
             try:
                 data = schema.load(req_data, **kwargs)
             except ValidationError as err:
-                return {'error': err.messages}
+                raise InvalidUsage(422, 'Invalid data', err.messages)
             kkwargs['data'] = data
             return func(*args, **kkwargs)
         return inner
@@ -31,18 +32,10 @@ def marshal_with_schema(schema):
             """
             if isinstance(data, dict) or isinstance(data, Response):
                 return data
-
-            return schema.dump(data)
-        return inner
-    return decorator
-
-
-def envelope(fn, **env_kwargs):
-    def decorator(func):
-        def inner(*args, **kwargs):
-            res = func(*args, **kwargs)
-            if isinstance(res, Response):
-                return res
-            return fn(res, **env_kwargs)
+            try:
+                d, *rest = data
+                return schema.dump(d), *rest
+            except TypeError:
+                return schema.dump(data)
         return inner
     return decorator

@@ -1,9 +1,9 @@
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, jwt_required, current_user
 from src.models import User, Post
+from src.exceptions import InvalidUsage
 from src.schemas import user_schema, login_schema, post_schema, posts_schema
-from src.middlewares import validate_with_schema, marshal_with_schema, envelope
-from src.utils import error_response, success_response
+from src.middlewares import validate_with_schema, marshal_with_schema
 
 
 class UserRegister(Resource):
@@ -11,14 +11,14 @@ class UserRegister(Resource):
     def post(self, data):
         user_in_db = User.get_by_email(data['email'])
         if user_in_db:
-            return error_response('Email already registered')
+            raise InvalidUsage(400, 'Email already registered')
 
         user = User(**data)
         user.save()
 
         token = create_access_token(identity=user)
 
-        return success_response({'token': token}, 201)
+        return {'token': token}, 201
 
 
 class UserLogin(Resource):
@@ -27,10 +27,10 @@ class UserLogin(Resource):
         user = User.get_by_email(data['email'])
 
         if not user or not user.check_hash(data['password']):
-            return error_response('Invalid credentials')
+            raise InvalidUsage(400, 'Invalid credentials')
 
         token = create_access_token(identity=user)
-        return success_response({'token': token})
+        return {'token': token}
 
 
 class UserMe(Resource):
@@ -50,14 +50,13 @@ class UserMe(Resource):
 
 class PostsResource(Resource):
     @jwt_required
-    @envelope(success_response, status_code=201)
     @validate_with_schema(post_schema)
     @marshal_with_schema(post_schema)
     def post(self, data):
         post = Post(**data, owner_id=current_user.id)
         post.save()
 
-        return post
+        return post, 201
 
     @marshal_with_schema(posts_schema)
     def get(self):
@@ -71,7 +70,7 @@ class PostResource(Resource):
     def get(self, post_id):
         post = Post.get_one(post_id)
         if not post:
-            return error_response('Post not found', 404)
+            raise InvalidUsage(404, 'Post not found')
 
         return post
 
@@ -81,23 +80,24 @@ class PostResource(Resource):
         post = Post.get_one(post_id)
 
         if not post:
-            return error_response('Post not found', 404)
+            raise InvalidUsage(404, 'Post not found')
         if post.owner_id != user.id:
-            return error_response('Permission denied', 403)
+            raise InvalidUsage(403, 'Permission denied')
 
         post.delete()
-        return success_response({'deleted': post.id})
+        return {'deleted': post.id}
 
     @jwt_required
-    @envelope(success_response)
     @validate_with_schema(post_schema, partial=True)
     @marshal_with_schema(post_schema)
     def put(self, post_id, data):
         user = current_user
         post = Post.get_one(post_id)
 
+        if not post:
+            raise InvalidUsage(404, 'Post not found')
         if user.id != post.owner_id:
-            return error_response('Permission denied', 403)
+            raise InvalidUsage(403, 'Permission denied')
 
         post.update(**data)
 
