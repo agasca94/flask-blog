@@ -34,3 +34,12 @@ class AuthorizedTestCase(BaseTestCase):
 
     def authorized_get(self, *args, **kwargs):
         return self.authorized_request('get', *args, **kwargs)
+
+    def authorized_post(self, *args, **kwargs):
+        return self.authorized_request('post', *args, **kwargs)
+
+    def authorized_delete(self, *args, **kwargs):
+        return self.authorized_request('delete', *args, **kwargs)
+
+    def authorized_put(self, *args, **kwargs):
+        return self.authorized_request('put', *args, **kwargs)

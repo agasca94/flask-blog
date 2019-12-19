@@ -81,9 +81,13 @@ class Post(db.Model):
 
     def save(self):
         self.modified_at = datetime.datetime.now()
-        if not self.id:
-            db.session.add(self)
+        db.session.add(self)
         db.session.commit()
+
+    def update(self, **kwargs):
+        for attr, value in kwargs.items():
+            setattr(self, attr, value)
+        self.save()
 
     def delete(self):
         db.session.delete(self)

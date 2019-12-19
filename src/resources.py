@@ -2,7 +2,7 @@ from flask_restful import Resource
 from flask_jwt_extended import create_access_token, jwt_required, current_user
 from src.models import User, Post
 from src.schemas import user_schema, login_schema, post_schema, posts_schema
-from src.middlewares import validate_with_schema, marshal_with_schema
+from src.middlewares import validate_with_schema, marshal_with_schema, envelope
 from src.utils import error_response, success_response
 
 
@@ -50,6 +50,7 @@ class UserMe(Resource):
 
 class PostsResource(Resource):
     @jwt_required
+    @envelope(success_response, status_code=201)
     @validate_with_schema(post_schema)
     @marshal_with_schema(post_schema)
     def post(self, data):
@@ -86,3 +87,18 @@ class PostResource(Resource):
 
         post.delete()
         return success_response({'deleted': post.id})
+
+    @jwt_required
+    @envelope(success_response)
+    @validate_with_schema(post_schema, partial=True)
+    @marshal_with_schema(post_schema)
+    def put(self, post_id, data):
+        user = current_user
+        post = Post.get_one(post_id)
+
+        if user.id != post.owner_id:
+            return error_response('Permission denied', 403)
+
+        post.update(**data)
+
+        return post

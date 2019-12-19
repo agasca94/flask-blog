@@ -6,7 +6,7 @@ from functools import wraps
 def validate_with_schema(schema, **kwargs):
     def decorator(func):
         @wraps(func)
-        def inner(self):
+        def inner(*args, **kkwargs):
             # Deserialize and validate incoming data
             req_data = request.get_json()
 
@@ -14,8 +14,8 @@ def validate_with_schema(schema, **kwargs):
                 data = schema.load(req_data, **kwargs)
             except ValidationError as err:
                 return {'error': err.messages}
-
-            return func(self, data)
+            kkwargs['data'] = data
+            return func(*args, **kkwargs)
         return inner
     return decorator
 
@@ -33,5 +33,16 @@ def marshal_with_schema(schema):
                 return data
 
             return schema.dump(data)
+        return inner
+    return decorator
+
+
+def envelope(fn, **env_kwargs):
+    def decorator(func):
+        def inner(*args, **kwargs):
+            res = func(*args, **kwargs)
+            if isinstance(res, Response):
+                return res
+            return fn(res, **env_kwargs)
         return inner
     return decorator
