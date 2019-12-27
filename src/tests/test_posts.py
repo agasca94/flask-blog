@@ -72,7 +72,7 @@ class PostTest(AuthorizedTestCase):
         }
         user = User(**self.user)
         user.save()
-        user2 = User('Another', 'another@mail.com', 'secret')
+        user2 = User('Another', 'another', 'another@mail.com', 'secret')
         user2.save()
         post = Post(**self.post, owner_id=user.id)
         post.save()
@@ -96,7 +96,7 @@ class PostTest(AuthorizedTestCase):
     def test_post_unauthorized_delete(self):
         user = User(**self.user)
         user.save()
-        user2 = User('Another', 'another@mail.com', 'secret')
+        user2 = User('Another', 'another', 'another@mail.com', 'secret')
         user2.save()
 
         post = Post(**self.post, owner_id=user.id)

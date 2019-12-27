@@ -6,6 +6,15 @@ from src.schemas import user_schema, login_schema, post_schema, posts_schema
 from src.middlewares import validate_with_schema, marshal_with_schema
 
 
+class UserResource(Resource):
+    @marshal_with_schema(user_schema)
+    def get(self, username):
+        user = User.get_by_username(username)
+        if not user:
+            raise InvalidUsage(404, 'User not found')
+        return user
+
+
 class UserRegister(Resource):
     @validate_with_schema(user_schema)
     def post(self, data):
@@ -18,7 +27,7 @@ class UserRegister(Resource):
 
         token = create_access_token(identity=user)
 
-        return {'token': token}, 201
+        return {'token': token, 'username': user.username}, 201
 
 
 class UserLogin(Resource):
@@ -27,10 +36,10 @@ class UserLogin(Resource):
         user = User.get_by_email(data['email'])
 
         if not user or not user.check_hash(data['password']):
-            raise InvalidUsage(400, 'Invalid credentials')
+            raise InvalidUsage(403, 'Invalid credentials')
 
         token = create_access_token(identity=user)
-        return {'token': token}
+        return {'token': token, 'username': user.username}
 
 
 class UserMe(Resource):

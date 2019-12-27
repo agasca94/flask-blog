@@ -7,15 +7,17 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
+    username = db.Column(db.String(128), nullable=False, unique=True)
     email = db.Column(db.String(128), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=True)
     created_at = db.Column(db.DateTime)
     modified_at = db.Column(db.DateTime)
     posts = db.relationship('Post', backref='author', lazy=True)
 
-    def __init__(self, name, email, password):
+    def __init__(self, name, username, email, password):
         self.name = name
         self.email = email
+        self.username = username
         self.created_at = datetime.datetime.now()
         self.modified_at = datetime.datetime.now()
         self.set_password(password)
@@ -48,6 +50,10 @@ class User(db.Model):
     @staticmethod
     def get_by_email(email):
         return User.query.filter_by(email=email).first()
+
+    @staticmethod
+    def get_by_username(username):
+        return User.query.filter_by(username=username).first()
 
     def set_password(self, password):
         self.password = bcrypt.generate_password_hash(

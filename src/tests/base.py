@@ -11,6 +11,7 @@ class BaseTestCase(TestCase):
     def setUp(self):
         self.user = {
             'name': 'Tester',
+            'username': 'tester',
             'email': 'tester@mail.com',
             'password': 'secret'
         }

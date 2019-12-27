@@ -10,10 +10,11 @@ class AuthTest(BaseTestCase):
             json=self.user
         )
         self.assertEqual(res.status_code, 201)
+        self.assertEqual(res.json['username'], self.user['username'])
         self.assertIn('token', res.json)
 
     def test_user_creation_with_existing_email(self):
-        user = User('A', 'tester@mail.com', 'pass')
+        user = User('A', 'a', 'tester@mail.com', 'pass')
         user.save()
         res = self.client.post(
             '/register',
@@ -27,6 +28,7 @@ class AuthTest(BaseTestCase):
     def test_user_creation_with_invalid_data(self):
         new_data = {
             'name': 123,
+            'username': 'newuser',
             'email': 'notamail'
         }
         res = self.client.post(
@@ -54,6 +56,7 @@ class AuthTest(BaseTestCase):
             json=credentials
         )
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json['username'], self.user['username'])
         self.assertIn('token', res.json)
 
     def test_user_login_with_wrong_credentials(self):
@@ -65,12 +68,30 @@ class AuthTest(BaseTestCase):
             '/login',
             json=credentials
         )
+        self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json, {
             'message': 'Invalid credentials'
         })
 
 
 class UserTest(AuthorizedTestCase):
+    def test_user_profile(self):
+        user = User(**self.user)
+        user.save()
+        res = self.client.get(f"/@{user.username}")
+        self.assertEqual(res.json, {
+            'id': user.id,
+            'username': user.username,
+            'name': user.name,
+            'email': user.email,
+            'posts': user.posts,
+        })
+
+    def test_user_profile_not_found(self):
+        res = self.client.get('/@someone')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json['message'], 'User not found')
+
     def test_user_get_me(self):
         user = User(**self.user)
         user.save()
@@ -81,6 +102,7 @@ class UserTest(AuthorizedTestCase):
         self.assertEqual(res.json, {
             'id': user.id,
             'name': user.name,
+            'username': user.username,
             'email': user.email,
             'posts': user.posts,
         })
