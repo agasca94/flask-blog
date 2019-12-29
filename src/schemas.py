@@ -28,3 +28,9 @@ user_schema = UserSchema()
 login_schema = LoginSchema()
 post_schema = PostSchema()
 posts_schema = PostSchema(many=True)
+
+
+def get_user_schema(required_fields):
+    default_excluded = {'posts'}
+    excluded = default_excluded.symmetric_difference(set(required_fields))
+    return UserSchema(exclude=excluded)

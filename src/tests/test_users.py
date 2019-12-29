@@ -1,6 +1,6 @@
 import unittest
 from src.tests.base import BaseTestCase, AuthorizedTestCase
-from src.models import User
+from src.models import User, Post
 
 
 class AuthTest(BaseTestCase):
@@ -95,6 +95,12 @@ class UserTest(AuthorizedTestCase):
     def test_user_get_me(self):
         user = User(**self.user)
         user.save()
+        post = {
+            'title': 'A',
+            'contents': 'B'
+        }
+        post = Post(**post, owner_id=user.id)
+        post.save()
         res = self.authorized_get(
             '/me',
             user
@@ -103,9 +109,27 @@ class UserTest(AuthorizedTestCase):
             'id': user.id,
             'name': user.name,
             'username': user.username,
-            'email': user.email,
-            'posts': user.posts,
+            'email': user.email
         })
+
+    def test_user_get_me_with_posts(self):
+        user = User(**self.user)
+        user.save()
+        post = {
+            'title': 'A',
+            'contents': 'B'
+        }
+        post = Post(**post, owner_id=user.id)
+        post.save()
+        res = self.authorized_get(
+            '/me?include=posts',
+            user
+        )
+        self.assertIn('posts', res.json)
+
+        posts = res.json['posts']
+        self.assertEqual(posts[0]['title'], post.title)
+        self.assertEqual(posts[0]['contents'], post.contents)
 
     def test_user_not_authenticated(self):
         res = self.client.get('/me')

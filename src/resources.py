@@ -1,8 +1,10 @@
 from flask_restful import Resource
+from flask import request as req
 from flask_jwt_extended import create_access_token, jwt_required, current_user
 from src.models import User, Post
 from src.exceptions import InvalidUsage
-from src.schemas import user_schema, login_schema, post_schema, posts_schema
+from src.schemas import user_schema, get_user_schema, login_schema, \
+    post_schema, posts_schema
 from src.middlewares import validate_with_schema, marshal_with_schema
 
 
@@ -52,9 +54,11 @@ class UserMe(Resource):
         return user
 
     @jwt_required
-    @marshal_with_schema(user_schema)
+    # @marshal_with_schema(user_schema)
     def get(self):
-        return current_user
+        include_fields = req.args.getlist('include')
+        schema = get_user_schema(include_fields)
+        return schema.dump(current_user)
 
 
 class PostsResource(Resource):
