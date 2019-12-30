@@ -83,8 +83,7 @@ class UserTest(AuthorizedTestCase):
             'id': user.id,
             'username': user.username,
             'name': user.name,
-            'email': user.email,
-            'posts': user.posts,
+            'email': user.email
         })
 
     def test_user_profile_not_found(self):

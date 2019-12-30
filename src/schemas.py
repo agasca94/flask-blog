@@ -21,16 +21,11 @@ class UserSchema(Schema):
     username = fields.Str(required=True)
     email = fields.Email(required=True)
     password = fields.Str(required=True, load_only=True)
+    token = fields.Str(dump_only=True)
     posts = fields.Nested(PostSchema(exclude=('author',)), many=True)
 
 
-user_schema = UserSchema()
+user_schema = UserSchema(exclude=('posts',))
 login_schema = LoginSchema()
 post_schema = PostSchema()
 posts_schema = PostSchema(many=True)
-
-
-def get_user_schema(required_fields):
-    default_excluded = {'posts'}
-    excluded = default_excluded.symmetric_difference(set(required_fields))
-    return UserSchema(exclude=excluded)

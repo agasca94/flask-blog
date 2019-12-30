@@ -1,15 +1,15 @@
 from flask_restful import Resource
-from flask import request as req
 from flask_jwt_extended import create_access_token, jwt_required, current_user
 from src.models import User, Post
 from src.exceptions import InvalidUsage
-from src.schemas import user_schema, get_user_schema, login_schema, \
-    post_schema, posts_schema
-from src.middlewares import validate_with_schema, marshal_with_schema
+from src.schemas import UserSchema, user_schema, \
+    login_schema, post_schema, posts_schema
+from src.middlewares import validate_with_schema, \
+    marshal_with_schema, dynamic_marshal_with_schema
 
 
 class UserResource(Resource):
-    @marshal_with_schema(user_schema)
+    @dynamic_marshal_with_schema(UserSchema, default_excluded=['posts'])
     def get(self, username):
         user = User.get_by_username(username)
         if not user:
@@ -34,6 +34,7 @@ class UserRegister(Resource):
 
 class UserLogin(Resource):
     @validate_with_schema(login_schema)
+    @marshal_with_schema(user_schema)
     def post(self, data):
         user = User.get_by_email(data['email'])
 
@@ -41,7 +42,8 @@ class UserLogin(Resource):
             raise InvalidUsage(403, 'Invalid credentials')
 
         token = create_access_token(identity=user)
-        return {'token': token, 'username': user.username}
+        user.token = token
+        return user
 
 
 class UserMe(Resource):
@@ -54,11 +56,9 @@ class UserMe(Resource):
         return user
 
     @jwt_required
-    # @marshal_with_schema(user_schema)
+    @dynamic_marshal_with_schema(UserSchema, default_excluded=['posts'])
     def get(self):
-        include_fields = req.args.getlist('include')
-        schema = get_user_schema(include_fields)
-        return schema.dump(current_user)
+        return current_user
 
 
 class PostsResource(Resource):
