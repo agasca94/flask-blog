@@ -7,6 +7,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
+    bio = db.Column(db.String(300), nullable=True)
     username = db.Column(db.String(128), nullable=False, unique=True)
     email = db.Column(db.String(128), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=True)
@@ -14,10 +15,11 @@ class User(db.Model):
     modified_at = db.Column(db.DateTime)
     posts = db.relationship('Post', backref='author', lazy=True)
 
-    def __init__(self, name, username, email, password):
+    def __init__(self, name, username, email, password, bio=''):
         self.name = name
         self.email = email
         self.username = username
+        self.bio = bio
         self.created_at = datetime.datetime.now()
         self.modified_at = datetime.datetime.now()
         self.set_password(password)

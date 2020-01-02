@@ -13,7 +13,8 @@ class BaseTestCase(TestCase):
             'name': 'Tester',
             'username': 'tester',
             'email': 'tester@mail.com',
-            'password': 'secret'
+            'password': 'secret',
+            'bio': 'About me'
         }
 
         db.create_all()

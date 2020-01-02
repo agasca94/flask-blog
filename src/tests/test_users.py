@@ -26,14 +26,14 @@ class AuthTest(BaseTestCase):
         self.assertEqual(res.status_code, 400)
 
     def test_user_creation_with_invalid_data(self):
-        new_data = {
+        invalid_data = {
             'name': 123,
             'username': 'newuser',
             'email': 'notamail'
         }
         res = self.client.post(
             '/register',
-            json=new_data
+            json=invalid_data
         )
 
         self.assertEqual(res.status_code, 422)
@@ -83,7 +83,8 @@ class UserTest(AuthorizedTestCase):
             'id': user.id,
             'username': user.username,
             'name': user.name,
-            'email': user.email
+            'email': user.email,
+            'bio': user.bio
         })
 
     def test_user_profile_not_found(self):
@@ -94,12 +95,6 @@ class UserTest(AuthorizedTestCase):
     def test_user_get_me(self):
         user = User(**self.user)
         user.save()
-        post = {
-            'title': 'A',
-            'contents': 'B'
-        }
-        post = Post(**post, owner_id=user.id)
-        post.save()
         res = self.authorized_get(
             '/me',
             user
@@ -108,7 +103,8 @@ class UserTest(AuthorizedTestCase):
             'id': user.id,
             'name': user.name,
             'username': user.username,
-            'email': user.email
+            'email': user.email,
+            'bio': user.bio
         })
 
     def test_user_get_me_with_posts(self):

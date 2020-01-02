@@ -19,6 +19,7 @@ class UserSchema(Schema):
     id = fields.Int(dump_only=True)
     name = fields.Str(required=True)
     username = fields.Str(required=True)
+    bio = fields.Str(required=False)
     email = fields.Email(required=True)
     password = fields.Str(required=True, load_only=True)
     token = fields.Str(dump_only=True)
