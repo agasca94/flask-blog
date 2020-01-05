@@ -27,10 +27,10 @@ def error_handler(error):
 def missing_token_handler(error):
     return {
         'message': 'Request does not contain an access token.'
-    }, 403
+    }, 401
 
 
 def invalid_token_handler(error):
     return {
         'message': 'Signature verification failed.'
-    }, 403
+    }, 401
