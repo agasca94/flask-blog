@@ -34,3 +34,9 @@ def invalid_token_handler(error):
     return {
         'message': 'Signature verification failed.'
     }, 401
+
+
+def expired_token_handler(error):
+    return {
+        'message': 'Session expired'
+    }, 401
