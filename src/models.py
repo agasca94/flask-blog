@@ -75,13 +75,15 @@ class Post(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.Text, nullable=False)
     contents = db.Column(db.Text, nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime)
     modified_at = db.Column(db.DateTime)
 
-    def __init__(self, title, contents, owner_id):
+    def __init__(self, title, description, contents, owner_id):
         self.title = title
+        self.description = description
         self.contents = contents
         self.owner_id = owner_id
         self.created_at = datetime.datetime.now()

@@ -8,6 +8,7 @@ class PostTest(AuthorizedTestCase):
         super().setUp()
         self.post = {
             'title': 'Test Post',
+            'description': 'Test description',
             'contents': 'Test contents'
         }
 
@@ -24,6 +25,7 @@ class PostTest(AuthorizedTestCase):
         data = res.json
         self.assertEqual(res.status_code, 201)
         self.assertEqual(data['title'], self.post['title'])
+        self.assertEqual(data['description'], self.post['description'])
         self.assertEqual(data['contents'], self.post['contents'])
         self.assertEqual(data['author']['id'], user.id)
 
@@ -38,6 +40,7 @@ class PostTest(AuthorizedTestCase):
         data = res.json
         self.assertEqual(res.status_code, 200)
         self.assertEqual(data['title'], self.post['title'])
+        self.assertEqual(data['description'], self.post['description'])
         self.assertEqual(data['contents'], self.post['contents'])
         self.assertEqual(data['author']['id'], user.id)
 
@@ -50,6 +53,7 @@ class PostTest(AuthorizedTestCase):
     def test_post_updated(self):
         new_data = {
             'title': 'New title',
+            # 'description': 'Not updated'
             'contents': 'New contents'
         }
         user = User(**self.user)
@@ -64,10 +68,13 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(data['title'], new_data['title'])
         self.assertEqual(data['contents'], new_data['contents'])
         self.assertEqual(data['author']['id'], user.id)
+        # Assert that description remains unchanged
+        self.assertEqual(data['description'], self.post['description'])
 
     def test_post_unauthorized_update(self):
         new_data = {
             'title': 'New title',
+            'description': 'New description',
             'contents': 'New contents'
         }
         user = User(**self.user)

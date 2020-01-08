@@ -112,7 +112,8 @@ class UserTest(AuthorizedTestCase):
         user.save()
         post = {
             'title': 'A',
-            'contents': 'B'
+            'description': 'B',
+            'contents': 'C'
         }
         post = Post(**post, owner_id=user.id)
         post.save()
@@ -124,11 +125,12 @@ class UserTest(AuthorizedTestCase):
 
         posts = res.json['posts']
         self.assertEqual(posts[0]['title'], post.title)
+        self.assertEqual(posts[0]['description'], post.description)
         self.assertEqual(posts[0]['contents'], post.contents)
 
     def test_user_not_authenticated(self):
         res = self.client.get('/me')
-        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.status_code, 401)
         self.assertEqual(
             res.json['message'],
             'Request does not contain an access token.'
@@ -139,7 +141,7 @@ class UserTest(AuthorizedTestCase):
             '/me',
             headers={'Authorization': 'Bearer badtoken'}
         )
-        self.assertEqual(res.status_code, 403)
+        self.assertEqual(res.status_code, 401)
         self.assertEqual(
             res.json['message'],
             'Signature verification failed.'
