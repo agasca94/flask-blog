@@ -1,4 +1,4 @@
-from marshmallow import fields, Schema
+from marshmallow import Schema, fields, post_dump
 
 
 class PostSchema(Schema):
@@ -25,6 +25,26 @@ class UserSchema(Schema):
     password = fields.Str(required=True, load_only=True)
     token = fields.Str(dump_only=True)
     posts = fields.Nested(PostSchema(exclude=('author',)), many=True)
+
+
+def get_pagination_schema(schema):
+    class PaginationSchema(Schema):
+        page = fields.Int(dump_only=True)
+        pages = fields.Int(dump_only=True)
+        next_num = fields.Int(dump_only=True)
+        prev_num = fields.Int(dump_only=True)
+        total = fields.Int(dump_only=True)
+        items = fields.Nested(schema, many=True)
+
+        @post_dump
+        def dump_pagination(self, data, **kwargs):
+            items = data.pop('items', [])
+            return {
+                'meta': data,
+                'data': items
+            }
+
+    return PaginationSchema()
 
 
 user_schema = UserSchema(exclude=('posts',))

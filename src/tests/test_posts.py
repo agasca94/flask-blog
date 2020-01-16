@@ -44,6 +44,24 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(data['contents'], self.post['contents'])
         self.assertEqual(data['author']['id'], user.id)
 
+    def test_posts_retrieved(self):
+        POSTS_NUM = 11
+        POSTS_PER_PAGE = 5
+        user = User(**self.user)
+        user.save()
+
+        [Post(**self.post, owner_id=user.id).save()
+            for _ in range(POSTS_NUM)]
+
+        res = self.client.get('/posts')
+
+        data = res.json
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(data['data']), POSTS_PER_PAGE)
+        self.assertEqual(data['meta']['total'], POSTS_NUM)
+        self.assertEqual(data['meta']['page'], 1)
+        self.assertEqual(data['meta']['next_num'], 2)
+
     def test_post_not_found(self):
         res = self.client.get(f"/posts/1")
 

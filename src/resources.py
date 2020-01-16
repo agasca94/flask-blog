@@ -1,3 +1,4 @@
+from flask import request as req
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, jwt_required, current_user
 from src.models import User, Post
@@ -64,18 +65,20 @@ class UserMe(Resource):
 class PostsResource(Resource):
     @jwt_required
     @validate_with_schema(post_schema)
-    @marshal_with_schema(post_schema)
+    @marshal_with_schema(post_schema, status_code=201)
     def post(self, data):
         post = Post(**data, owner_id=current_user.id)
         post.save()
 
-        return post, 201
+        return post
 
-    @marshal_with_schema(posts_schema)
+    @marshal_with_schema(posts_schema, paginate=True)
     def get(self):
-        posts = Post.get_all()
+        POSTS_PER_PAGE = 5
+        page = req.args.get('page', 1, int)
+        pagination = Post.query.paginate(page, POSTS_PER_PAGE, False)
 
-        return posts
+        return pagination
 
 
 class PostResource(Resource):

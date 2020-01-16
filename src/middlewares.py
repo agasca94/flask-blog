@@ -2,6 +2,7 @@ from flask import request, Response
 from marshmallow import ValidationError
 from functools import wraps
 from src.exceptions import InvalidUsage
+from src.schemas import get_pagination_schema
 
 
 def validate_with_schema(schema, error_msg='Invalid data', **kwargs):
@@ -26,25 +27,28 @@ def _dumped_data(data, schema):
     # without parsing it
     if isinstance(data, dict) or isinstance(data, Response):
         return data
-    try:
-        d, *rest = data
-        return schema.dump(d), *rest
-    except TypeError:
-        return schema.dump(data)
+    return schema.dump(data)
 
 
-def marshal_with_schema(schema):
+def marshal_with_schema(schema, status_code=200, paginate=False):
     def decorator(func):
         @wraps(func)
         def inner(*data, **kwargs):
             data = func(*data, **kwargs)
 
-            return _dumped_data(data, schema)
+            pag_schema = get_pagination_schema(schema) if paginate else schema
+
+            return _dumped_data(data, pag_schema), status_code
         return inner
     return decorator
 
 
-def dynamic_marshal_with_schema(schema_cls, default_excluded=[]):
+def dynamic_marshal_with_schema(
+    schema_cls,
+    default_excluded=[],
+    status_code=200,
+    paginate=False
+):
     def decorator(func):
         @wraps(func)
         def inner(*data, **kwargs):
@@ -56,9 +60,12 @@ def dynamic_marshal_with_schema(schema_cls, default_excluded=[]):
             ))
 
             data = func(*data, **kwargs)
-            many = isinstance(data, list)
+            many = isinstance(data, list) or paginate
             schema = schema_cls(exclude=excluded, many=many)
 
-            return _dumped_data(data, schema)
+            if paginate:
+                schema = get_pagination_schema(schema)
+
+            return _dumped_data(data, schema), status_code
         return inner
     return decorator
