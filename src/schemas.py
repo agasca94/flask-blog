@@ -27,6 +27,13 @@ class UserSchema(Schema):
     posts = fields.Nested(PostSchema(exclude=('author',)), many=True)
 
 
+class CommentSchema(Schema):
+    id = fields.Int(dump_only=True)
+    contents = fields.Str(required=True)
+    author = fields.Nested(UserSchema(exclude=('posts',)))
+    created_at = fields.DateTime(dump_only=True)
+
+
 def get_pagination_schema(schema):
     class PaginationSchema(Schema):
         page = fields.Int(dump_only=True)
@@ -47,7 +54,12 @@ def get_pagination_schema(schema):
     return PaginationSchema()
 
 
-user_schema = UserSchema(exclude=('posts',))
 login_schema = LoginSchema()
+
+user_schema = UserSchema(exclude=('posts',))
+
 post_schema = PostSchema()
 posts_schema = PostSchema(many=True)
+
+comment_schema = CommentSchema()
+comments_schema = CommentSchema(many=True)

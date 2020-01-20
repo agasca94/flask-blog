@@ -81,7 +81,7 @@ class Post(db.Model):
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.Text, nullable=False)
     contents = db.Column(db.Text, nullable=False)
-    comments = db.relationship('Comment', backref='post', lazy=True)
+    comments = db.relationship('Comment', backref='post', lazy='dynamic')
     owner_id = db.Column(
         db.Integer, db.ForeignKey('users.id'), nullable=False
     )

@@ -4,7 +4,8 @@ from src.extensions import db, bcrypt, jwt, cors
 from src.config import app_config
 from src.exceptions import InvalidUsage, error_handler
 from src.resources import UserRegister, UserLogin, UserMe,\
-    PostsResource, PostResource, UserResource
+    PostsResource, PostResource, UserResource, \
+    CommentsResource, CommentResource
 
 
 def create_app(env_name):
@@ -24,6 +25,11 @@ def create_app(env_name):
     api.add_resource(UserResource, '/@<string:username>')
     api.add_resource(PostsResource, '/posts')
     api.add_resource(PostResource, '/posts/<int:post_id>')
+    api.add_resource(CommentsResource, '/posts/<int:post_id>/comments')
+    api.add_resource(
+        CommentResource,
+        '/posts/<int:post_id>/comments/<int:comment_id>'
+    )
 
     @app.route('/', methods=['GET'])
     def index():

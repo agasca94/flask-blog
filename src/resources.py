@@ -1,10 +1,10 @@
 from flask import request as req
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, jwt_required, current_user
-from src.models import User, Post
+from src.models import User, Post, Comment
 from src.exceptions import InvalidUsage
 from src.schemas import UserSchema, user_schema, \
-    login_schema, post_schema, posts_schema
+    login_schema, post_schema, posts_schema, comment_schema, comments_schema
 from src.middlewares import validate_with_schema, \
     marshal_with_schema, dynamic_marshal_with_schema
 
@@ -118,3 +118,60 @@ class PostResource(Resource):
         post.update(**data)
 
         return post
+
+
+class CommentsResource(Resource):
+
+    @jwt_required
+    @validate_with_schema(comment_schema)
+    @marshal_with_schema(comment_schema, status_code=201)
+    def post(self, post_id, data):
+        post = Post.get_one(post_id)
+        if not post:
+            raise InvalidUsage(404, 'Post not found')
+        comment = Comment(post.id, author_id=current_user.id, **data)
+        comment.save()
+
+        return comment
+
+    @marshal_with_schema(comments_schema)
+    def get(self, post_id):
+        post = Post.get_one(post_id)
+        if not post:
+            raise InvalidUsage(404, 'Post not found')
+        comments = post.comments
+
+        return comments
+
+
+class CommentResource(Resource):
+
+    @jwt_required
+    @validate_with_schema(comment_schema)
+    @marshal_with_schema(comment_schema)
+    def put(self, post_id, comment_id, data):
+        post = Post.get_one(post_id)
+        if not post:
+            raise InvalidUsage(404, 'Post not found')
+        comment = post.comments.filter_by(id=comment_id).first()
+        if not comment:
+            raise InvalidUsage(404, 'Comment not found')
+        if comment.author_id != current_user.id:
+            raise InvalidUsage(403, 'Permission denied')
+        comment.update(**data)
+
+        return comment
+
+    @jwt_required
+    def delete(self, post_id, comment_id):
+        post = Post.get_one(post_id)
+        if not post:
+            raise InvalidUsage(404, 'Post not found')
+        comment = post.comments.filter_by(id=comment_id).first()
+        if not comment:
+            raise InvalidUsage(404, 'Comment not found')
+        if comment.author_id != current_user.id:
+            raise InvalidUsage(403, 'Permission denied')
+        comment.delete()
+
+        return {'deleted': comment.id}
