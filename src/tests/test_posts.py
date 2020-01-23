@@ -159,6 +159,39 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json['message'], 'Permission denied')
 
+    def test_post_favorited(self):
+        user = User(**self.user)
+        user.save()
+
+        post = Post(**self.post, owner_id=user.id)
+        post.save()
+
+        res = self.authorized_post(
+            f"/posts/{post.id}/favorite",
+            user
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json['favorites_count'], 1)
+        self.assertEqual(res.json['is_favorited'], True)
+
+    def test_post_unfavorited(self):
+        user = User(**self.user)
+        user.save()
+
+        post = Post(**self.post, owner_id=user.id)
+        post.favorited_by = [user]
+        post.save()
+
+        res = self.authorized_delete(
+            f"/posts/{post.id}/favorite",
+            user
+        )
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json['favorites_count'], 0)
+        self.assertEqual(res.json['is_favorited'], False)
+
 
 if __name__ == '__main__':
     unittest.main()

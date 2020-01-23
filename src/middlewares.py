@@ -69,3 +69,16 @@ def dynamic_marshal_with_schema(
             return _dumped_data(data, schema), status_code
         return inner
     return decorator
+
+
+def log_sqlalchemy(func):
+    @wraps(func)
+    def inner(*data, **kwargs):
+        import logging
+        logging.basicConfig()
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+        res = func(*data, **kwargs)
+        logging.disable()
+
+        return res
+    return inner

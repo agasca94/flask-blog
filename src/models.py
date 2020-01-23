@@ -162,6 +162,17 @@ class Post(db.Model):
         db.session.delete(self)
         db.session.commit()
 
+    def favorite(self, user):
+        self.favorited_by.append(user)
+        self.save()
+
+    def unfavorite(self, user):
+        try:
+            self.favorited_by.remove(user)
+            self.save()
+        except ValueError:
+            pass
+
     @staticmethod
     def get_all():
         return Post.query.all()

@@ -12,6 +12,7 @@ from src.middlewares import validate_with_schema, \
 
 
 class UserResource(Resource):
+
     @dynamic_marshal_with_schema(UserSchema, default_excluded=['posts'])
     def get(self, username):
         user = User.get_by_username(username)
@@ -21,6 +22,7 @@ class UserResource(Resource):
 
 
 class UserRegister(Resource):
+
     @validate_with_schema(user_schema)
     def post(self, data):
         user_in_db = User.get_by_email(data['email'])
@@ -36,6 +38,7 @@ class UserRegister(Resource):
 
 
 class UserLogin(Resource):
+
     @validate_with_schema(login_schema)
     @marshal_with_schema(user_schema)
     def post(self, data):
@@ -50,6 +53,7 @@ class UserLogin(Resource):
 
 
 class UserMe(Resource):
+
     @jwt_required
     @validate_with_schema(user_schema, partial=True)
     @marshal_with_schema(user_schema)
@@ -65,6 +69,7 @@ class UserMe(Resource):
 
 
 class PostsResource(Resource):
+
     @jwt_required
     @validate_with_schema(post_schema)
     @marshal_with_schema(post_schema, status_code=201)
@@ -85,6 +90,7 @@ class PostsResource(Resource):
 
 
 class PostResource(Resource):
+
     @marshal_with_schema(post_schema)
     def get(self, post_id):
         post = Post.get_one(post_id)
@@ -119,6 +125,29 @@ class PostResource(Resource):
             raise InvalidUsage(403, 'Permission denied')
 
         post.update(**data)
+
+        return post
+
+
+class FavoriteResource(Resource):
+
+    @jwt_required
+    @marshal_with_schema(post_schema)
+    def post(self, post_id):
+        post = Post.get_one(post_id)
+        if not post:
+            raise InvalidUsage(404, 'Post not found')
+        post.favorite(current_user)
+
+        return post
+
+    @jwt_required
+    @marshal_with_schema(post_schema)
+    def delete(self, post_id):
+        post = Post.get_one(post_id)
+        if not post:
+            raise InvalidUsage(404, 'Post not found')
+        post.unfavorite(current_user)
 
         return post
 

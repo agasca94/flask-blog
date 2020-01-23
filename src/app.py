@@ -3,9 +3,10 @@ from flask_restful import Api
 from src.extensions import db, bcrypt, jwt, cors
 from src.config import app_config
 from src.exceptions import InvalidUsage, error_handler
-from src.resources import UserRegister, UserLogin, UserMe,\
-    PostsResource, PostResource, UserResource, \
-    CommentsResource, CommentResource
+from src.resources import UserRegister, UserLogin, UserMe, UserResource, \
+    PostsResource, PostResource, \
+    CommentsResource, CommentResource, \
+    FavoriteResource
 
 
 def create_app(env_name):
@@ -25,6 +26,7 @@ def create_app(env_name):
     api.add_resource(UserResource, '/@<string:username>')
     api.add_resource(PostsResource, '/posts')
     api.add_resource(PostResource, '/posts/<int:post_id>')
+    api.add_resource(FavoriteResource, '/posts/<int:post_id>/favorite')
     api.add_resource(CommentsResource, '/posts/<int:post_id>/comments')
     api.add_resource(
         CommentResource,
