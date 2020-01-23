@@ -1,10 +1,12 @@
 from flask import request as req
 from flask_restful import Resource
-from flask_jwt_extended import create_access_token, jwt_required, current_user
+from flask_jwt_extended import create_access_token, current_user, \
+    jwt_required, jwt_optional
 from src.models import User, Post, Comment
 from src.exceptions import InvalidUsage
-from src.schemas import UserSchema, user_schema, \
-    login_schema, post_schema, posts_schema, comment_schema, comments_schema
+from src.schemas import login_schema, user_schema, UserSchema, \
+    post_schema, posts_schema,\
+    comment_schema, comments_schema
 from src.middlewares import validate_with_schema, \
     marshal_with_schema, dynamic_marshal_with_schema
 
@@ -72,13 +74,17 @@ class PostsResource(Resource):
 
         return post
 
+    @jwt_optional
     @marshal_with_schema(posts_schema, paginate=True)
     def get(self):
         POSTS_PER_PAGE = 5
         page = req.args.get('page', 1, int)
-        pagination = Post.query.paginate(page, POSTS_PER_PAGE, False)
 
-        return pagination
+        posts = Post.\
+            with_favorites().\
+            paginate(page, POSTS_PER_PAGE, False)
+
+        return posts
 
 
 class PostResource(Resource):

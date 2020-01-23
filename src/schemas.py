@@ -9,6 +9,8 @@ class PostSchema(Schema):
     author = fields.Nested(lambda: UserSchema(exclude=('posts',)))
     created_at = fields.DateTime(dump_only=True)
     modified_at = fields.DateTime(dump_only=True)
+    favorites_count = fields.Int(dump_only=True)
+    is_favorited = fields.Boolean(dump_only=True)
 
 
 class LoginSchema(Schema):

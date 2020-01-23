@@ -1,6 +1,20 @@
 import datetime
 from src.extensions import db, bcrypt
 import datetime as dt
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import query_expression, with_expression
+from flask_jwt_extended import current_user
+
+
+favorites_assoc = db.Table(
+    'favorites_assoc',
+    db.Column(
+        'user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True
+    ),
+    db.Column(
+        'post_id', db.Integer, db.ForeignKey('posts.id'), primary_key=True
+    )
+)
 
 
 class User(db.Model):
@@ -12,8 +26,20 @@ class User(db.Model):
     username = db.Column(db.String(128), nullable=False, unique=True)
     email = db.Column(db.String(128), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=True)
-    posts = db.relationship('Post', backref='author', lazy=True)
-    comments = db.relationship('Comment', backref='author', lazy=True)
+    posts = db.relationship(
+        'Post',
+        # Eager load the author of each post using an INNER JOIN
+        # NOTE: joined loading is more commonly used to load
+        # many-to-one not null relationships, not collections
+        backref=db.backref('author', lazy='joined', innerjoin=True),
+        lazy=True
+    )
+    comments = db.relationship(
+        'Comment',
+        # Eager load the author of each comment using an INNER JOIN
+        backref=db.backref('author', lazy='joined', innerjoin=True),
+        lazy=True
+    )
     created_at = db.Column(
         db.DateTime, nullable=False, default=dt.datetime.now
     )
@@ -81,9 +107,21 @@ class Post(db.Model):
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.Text, nullable=False)
     contents = db.Column(db.Text, nullable=False)
-    comments = db.relationship('Comment', backref='post', lazy='dynamic')
+    comments = db.relationship(
+        'Comment',
+        backref='post',
+        lazy='dynamic'
+    )
     owner_id = db.Column(
         db.Integer, db.ForeignKey('users.id'), nullable=False
+    )
+    favorited_by = db.relationship(
+        'User',
+        secondary=favorites_assoc,
+        backref=db.backref('favorites', lazy=True),
+        # Eager load the users who favorited this post using an
+        # additional SELECT IN query
+        lazy='selectin'
     )
     created_at = db.Column(
         db.DateTime, nullable=False, default=dt.datetime.now
@@ -91,6 +129,7 @@ class Post(db.Model):
     modified_at = db.Column(
         db.DateTime, nullable=False, default=dt.datetime.now
     )
+    is_favorited = query_expression()
 
     def __init__(self, title, description, contents, owner_id):
         self.title = title
@@ -113,12 +152,39 @@ class Post(db.Model):
         db.session.commit()
 
     @staticmethod
+    def with_favorites():
+        query = Post.query
+        if current_user:
+            # Query the posts which have been favorited by the current user
+            # Uses the association table favorites_assoc
+            subquery = db.session.query(
+                Post.id,
+                Post.favorited_by.any(
+                    User.id == current_user.id
+                ).label('is_favorited')
+            ).subquery()
+
+            # Outer join the previous subquery with the base query and
+            # retrieve the boolean value
+            query = Post.query.options(
+                with_expression(Post.is_favorited, subquery.c.is_favorited)
+            ).outerjoin(
+                subquery, Post.id == subquery.c.id
+            )
+
+        return query
+
+    @staticmethod
     def get_all():
         return Post.query.all()
 
     @staticmethod
     def get_one(_id):
         return Post.query.get(_id)
+
+    @hybrid_property
+    def favorites_count(self):
+        return len(self.favorited_by)
 
     def __repr__(self):
         return f"<id {self.id}>"

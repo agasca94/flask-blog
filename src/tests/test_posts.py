@@ -32,7 +32,10 @@ class PostTest(AuthorizedTestCase):
     def test_post_retrieved(self):
         user = User(**self.user)
         user.save()
+        user2 = User('Another', 'another', 'another@mail.com', 'secret')
+        user2.save()
         post = Post(**self.post, owner_id=user.id)
+        post.favorited_by.extend([user, user2])
         post.save()
 
         res = self.client.get(f"/posts/{post.id}")
@@ -43,17 +46,26 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(data['description'], self.post['description'])
         self.assertEqual(data['contents'], self.post['contents'])
         self.assertEqual(data['author']['id'], user.id)
+        self.assertEqual(data['favorites_count'], 2)
 
     def test_posts_retrieved(self):
         POSTS_NUM = 11
         POSTS_PER_PAGE = 5
         user = User(**self.user)
         user.save()
+        user2 = User('Another', 'another', 'another@mail.com', 'secret')
+        user2.save()
 
-        [Post(**self.post, owner_id=user.id).save()
-            for _ in range(POSTS_NUM)]
+        posts = [Post(**self.post, owner_id=user.id) for _ in range(POSTS_NUM)]
+        posts[0].favorited_by = [user, user2]
+        posts[1].favorited_by = [user]
+        posts[2].favorited_by = [user2]
+        [post.save() for post in posts]
 
-        res = self.client.get('/posts')
+        res = self.authorized_get(
+            '/posts',
+            user
+        )
 
         data = res.json
         self.assertEqual(res.status_code, 200)
@@ -61,6 +73,20 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(data['meta']['total'], POSTS_NUM)
         self.assertEqual(data['meta']['page'], 1)
         self.assertEqual(data['meta']['next_num'], 2)
+
+        data = data['data']
+        favorites = {
+            'is_favorited': [
+                post['is_favorited'] for post in data
+            ],
+            'favorites_count': [
+                post['favorites_count'] for post in data
+            ],
+        }
+        self.assertEqual(favorites, {
+            'is_favorited': [True, True, False] + [False]*2,
+            'favorites_count': [2, 1, 1] + [0]*2
+        })
 
     def test_post_not_found(self):
         res = self.client.get(f"/posts/1")
