@@ -90,7 +90,7 @@ class PostsResource(Resource):
 
 
 class PostResource(Resource):
-
+    @jwt_optional
     @marshal_with_schema(post_schema)
     def get(self, post_id):
         post = Post.get_one(post_id)
