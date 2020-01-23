@@ -35,7 +35,7 @@ class PostTest(AuthorizedTestCase):
         user2 = User('Another', 'another', 'another@mail.com', 'secret')
         user2.save()
         post = Post(**self.post, owner_id=user.id)
-        post.favorited_by.extend([user, user2])
+        post.favorited_by = [user, user2]
         post.save()
 
         res = self.client.get(f"/posts/{post.id}")
@@ -47,6 +47,7 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(data['contents'], self.post['contents'])
         self.assertEqual(data['author']['id'], user.id)
         self.assertEqual(data['favorites_count'], 2)
+        self.assertEqual(data['is_favorited'], False)
 
     def test_posts_retrieved(self):
         POSTS_NUM = 11

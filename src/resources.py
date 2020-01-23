@@ -79,10 +79,7 @@ class PostsResource(Resource):
     def get(self):
         POSTS_PER_PAGE = 5
         page = req.args.get('page', 1, int)
-
-        posts = Post.\
-            with_favorites().\
-            paginate(page, POSTS_PER_PAGE, False)
+        posts = Post.query.paginate(page, POSTS_PER_PAGE, False)
 
         return posts
 

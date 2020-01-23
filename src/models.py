@@ -1,9 +1,9 @@
-import datetime
-from src.extensions import db, bcrypt
 import datetime as dt
+from sqlalchemy import select, func, bindparam
+from sqlalchemy.orm import column_property
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import query_expression, with_expression
 from flask_jwt_extended import current_user
+from src.extensions import db, bcrypt
 
 
 favorites_assoc = db.Table(
@@ -55,7 +55,7 @@ class User(db.Model):
         self.set_password(password)
 
     def save(self):
-        self.modified_at = datetime.datetime.now()
+        self.modified_at = dt.datetime.now()
         db.session.add(self)
         db.session.commit()
 
@@ -129,7 +129,18 @@ class Post(db.Model):
     modified_at = db.Column(
         db.DateTime, nullable=False, default=dt.datetime.now
     )
-    is_favorited = query_expression()
+    is_favorited = column_property(
+        select(
+            [func.count(favorites_assoc.c.post_id) == 1]
+        ).where(
+            favorites_assoc.c.post_id == id
+        ).where(
+            favorites_assoc.c.user_id == bindparam(
+                'current_user_id',
+                callable_=lambda: current_user.id if current_user else None
+            )
+        )
+    )
 
     def __init__(self, title, description, contents, owner_id):
         self.title = title
@@ -138,7 +149,7 @@ class Post(db.Model):
         self.owner_id = owner_id
 
     def save(self):
-        self.modified_at = datetime.datetime.now()
+        self.modified_at = dt.datetime.now()
         db.session.add(self)
         db.session.commit()
 
@@ -150,29 +161,6 @@ class Post(db.Model):
     def delete(self):
         db.session.delete(self)
         db.session.commit()
-
-    @staticmethod
-    def with_favorites():
-        query = Post.query
-        if current_user:
-            # Query the posts which have been favorited by the current user
-            # Uses the association table favorites_assoc
-            subquery = db.session.query(
-                Post.id,
-                Post.favorited_by.any(
-                    User.id == current_user.id
-                ).label('is_favorited')
-            ).subquery()
-
-            # Outer join the previous subquery with the base query and
-            # retrieve the boolean value
-            query = Post.query.options(
-                with_expression(Post.is_favorited, subquery.c.is_favorited)
-            ).outerjoin(
-                subquery, Post.id == subquery.c.id
-            )
-
-        return query
 
     @staticmethod
     def get_all():
@@ -214,7 +202,7 @@ class Comment(db.Model):
         self.author_id = author_id
 
     def save(self):
-        self.modified_at = datetime.datetime.now()
+        self.modified_at = dt.datetime.now()
         db.session.add(self)
         db.session.commit()
 
