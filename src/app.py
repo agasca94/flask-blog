@@ -4,9 +4,9 @@ from src.extensions import db, bcrypt, jwt, cors
 from src.config import app_config
 from src.exceptions import InvalidUsage, error_handler
 from src.resources import UserRegister, UserLogin, UserMe, UserResource, \
-    PostsResource, PostResource, \
+    PostsResource, PostResource, PostsByUserResource, \
     CommentsResource, CommentResource, \
-    FavoriteResource
+    FavoriteResource, FavoritePostsByUserResource
 
 
 def create_app(env_name):
@@ -24,6 +24,11 @@ def create_app(env_name):
     api.add_resource(UserLogin, '/login')
     api.add_resource(UserMe, '/me')
     api.add_resource(UserResource, '/@<string:username>')
+    api.add_resource(PostsByUserResource, '/@<string:username>/posts')
+    api.add_resource(
+        FavoritePostsByUserResource,
+        '/@<string:username>/favorites'
+    )
     api.add_resource(PostsResource, '/posts')
     api.add_resource(PostResource, '/posts/<int:post_id>')
     api.add_resource(FavoriteResource, '/posts/<int:post_id>/favorite')

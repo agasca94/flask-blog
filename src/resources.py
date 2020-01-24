@@ -89,6 +89,34 @@ class PostsResource(Resource):
         return posts
 
 
+class PostsByUserResource(Resource):
+
+    @jwt_optional
+    @marshal_with_schema(posts_schema)
+    def get(self, username):
+        user = User.get_by_username(username)
+        if not user:
+            raise InvalidUsage(404, 'User not found')
+
+        posts = user.posts.filter_by(owner_id=user.id)
+
+        return posts
+
+
+class FavoritePostsByUserResource(Resource):
+
+    @jwt_optional
+    @marshal_with_schema(posts_schema)
+    def get(self, username):
+        user = User.get_by_username(username)
+        if not user:
+            raise InvalidUsage(404, 'User not found')
+
+        posts = user.favorites.all()
+
+        return posts
+
+
 class PostResource(Resource):
     @jwt_optional
     @marshal_with_schema(post_schema)

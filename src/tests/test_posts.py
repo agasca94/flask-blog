@@ -89,6 +89,62 @@ class PostTest(AuthorizedTestCase):
             'favorites_count': [2, 1, 1] + [0]*2
         })
 
+    def test_posts_by_user_retrieved(self):
+        user = User(**self.user)
+        user.save()
+        user2 = User('Another', 'another', 'another@mail.com', 'secret')
+        user2.save()
+
+        post1 = Post(**self.post, owner_id=user.id)
+        post1.save()
+        post2 = Post(**self.post, owner_id=user2.id)
+        post2.save()
+        post3 = Post(**self.post, owner_id=user.id)
+        post3.save()
+        post5 = Post(**self.post, owner_id=user2.id)
+        post5.save()
+
+        res = self.client.get(f'/@{user.username}/posts')
+
+        data = res.json
+        authors = [post['author']['id'] for post in data]
+        posts_ids = [post['id'] for post in data]
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(data), 2)
+        self.assertEqual(authors, [user.id]*2)
+        self.assertEqual(posts_ids, [post1.id, post3.id])
+
+    def test_favorites_retrieved(self):
+        user = User(**self.user)
+        user.save()
+        user2 = User('Another', 'another', 'another@mail.com', 'secret')
+        user2.save()
+
+        post1 = Post(**self.post, owner_id=user.id)
+        post1.favorited_by = [user, user2]
+        post1.save()
+        post2 = Post(**self.post, owner_id=user.id)
+        post2.favorited_by = [user2]
+        post2.save()
+        post3 = Post(**self.post, owner_id=user.id)
+        post3.favorited_by = [user]
+        post3.save()
+        post5 = Post(**self.post, owner_id=user.id)
+        post5.save()
+
+        res = self.client.get(f'/@{user.username}/favorites')
+
+        data = res.json
+        print(data)
+        authors = [post['author']['id'] for post in data]
+        posts_ids = [post['id'] for post in data]
+
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(data), 2)
+        self.assertEqual(authors, [user.id]*2)
+        self.assertEqual(posts_ids, [post1.id, post3.id])
+
     def test_post_not_found(self):
         res = self.client.get(f"/posts/1")
 

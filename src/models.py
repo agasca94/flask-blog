@@ -1,6 +1,6 @@
 import datetime as dt
 from sqlalchemy import select, func, bindparam
-from sqlalchemy.orm import column_property
+from sqlalchemy.orm import column_property, aliased
 from sqlalchemy.ext.hybrid import hybrid_property
 from flask_jwt_extended import current_user
 from src.extensions import db, bcrypt
@@ -15,6 +15,7 @@ favorites_assoc = db.Table(
         'post_id', db.Integer, db.ForeignKey('posts.id'), primary_key=True
     )
 )
+favaliased = aliased(favorites_assoc)
 
 
 class User(db.Model):
@@ -32,7 +33,7 @@ class User(db.Model):
         # NOTE: joined loading is more commonly used to load
         # many-to-one not null relationships, not collections
         backref=db.backref('author', lazy='joined', innerjoin=True),
-        lazy=True
+        lazy='dynamic'
     )
     comments = db.relationship(
         'Comment',
@@ -110,7 +111,8 @@ class Post(db.Model):
     comments = db.relationship(
         'Comment',
         backref='post',
-        lazy='dynamic'
+        lazy='dynamic',
+        cascade='save-update, merge, delete, delete-orphan'
     )
     owner_id = db.Column(
         db.Integer, db.ForeignKey('users.id'), nullable=False
@@ -118,7 +120,7 @@ class Post(db.Model):
     favorited_by = db.relationship(
         'User',
         secondary=favorites_assoc,
-        backref=db.backref('favorites', lazy=True),
+        backref=db.backref('favorites', lazy='dynamic'),
         # Eager load the users who favorited this post using an
         # additional SELECT IN query
         lazy='selectin'
@@ -128,18 +130,6 @@ class Post(db.Model):
     )
     modified_at = db.Column(
         db.DateTime, nullable=False, default=dt.datetime.now
-    )
-    is_favorited = column_property(
-        select(
-            [func.count(favorites_assoc.c.post_id) == 1]
-        ).where(
-            favorites_assoc.c.post_id == id
-        ).where(
-            favorites_assoc.c.user_id == bindparam(
-                'current_user_id',
-                callable_=lambda: current_user.id if current_user else None
-            )
-        )
     )
 
     def __init__(self, title, description, contents, owner_id):
@@ -187,6 +177,20 @@ class Post(db.Model):
 
     def __repr__(self):
         return f"<id {self.id}>"
+
+
+Post.is_favorited = column_property(
+    select(
+        [func.count(favaliased.c.post_id) == 1]
+    ).where(
+        favaliased.c.post_id == Post.id
+    ).where(
+        favaliased.c.user_id == bindparam(
+            'current_user_id',
+            callable_=lambda: current_user.id if current_user else None
+        )
+    )
+)
 
 
 class Comment(db.Model):
