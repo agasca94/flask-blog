@@ -117,8 +117,7 @@ class FavoritePostsByUserResource(Resource):
             raise InvalidUsage(404, 'User not found')
 
         posts = user.favorites. \
-            order_by(Post.created_at.desc()). \
-            all()
+            order_by(Post.created_at.desc())
 
         return posts
 
@@ -205,7 +204,8 @@ class CommentsResource(Resource):
         post = Post.get_one(post_id)
         if not post:
             raise InvalidUsage(404, 'Post not found')
-        comments = post.comments
+        comments = post.comments. \
+            order_by(Comment.created_at.desc())
 
         return comments
 
