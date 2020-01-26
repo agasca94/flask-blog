@@ -136,7 +136,6 @@ class PostTest(AuthorizedTestCase):
         res = self.client.get(f'/@{user.username}/favorites')
 
         data = res.json
-        print(data)
         authors = [post['author']['id'] for post in data]
         posts_ids = [post['id'] for post in data]
 

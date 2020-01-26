@@ -84,7 +84,9 @@ class PostsResource(Resource):
     def get(self):
         POSTS_PER_PAGE = 5
         page = req.args.get('page', 1, int)
-        posts = Post.query.paginate(page, POSTS_PER_PAGE, False)
+        posts = Post.query. \
+            order_by(Post.created_at.desc()). \
+            paginate(page, POSTS_PER_PAGE, False)
 
         return posts
 
@@ -98,7 +100,9 @@ class PostsByUserResource(Resource):
         if not user:
             raise InvalidUsage(404, 'User not found')
 
-        posts = user.posts.filter_by(owner_id=user.id)
+        posts = user.posts. \
+            order_by(Post.created_at.desc()). \
+            filter_by(owner_id=user.id)
 
         return posts
 
@@ -112,7 +116,9 @@ class FavoritePostsByUserResource(Resource):
         if not user:
             raise InvalidUsage(404, 'User not found')
 
-        posts = user.favorites.all()
+        posts = user.favorites. \
+            order_by(Post.created_at.desc()). \
+            all()
 
         return posts
 
