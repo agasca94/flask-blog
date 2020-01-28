@@ -1,6 +1,7 @@
 import unittest
 from src.tests.base import AuthorizedTestCase
 from src.models import Post, User
+from datetime import datetime as dt
 
 
 class PostTest(AuthorizedTestCase):
@@ -51,22 +52,22 @@ class PostTest(AuthorizedTestCase):
 
     def test_posts_retrieved(self):
         POSTS_NUM = 11
-        POSTS_PER_PAGE = 5
+        POSTS_PER_PAGE = 6
         user = User(**self.user)
         user.save()
         user2 = User('Another', 'another', 'another@mail.com', 'secret')
         user2.save()
 
-        posts = [Post(**self.post, owner_id=user.id) for _ in range(POSTS_NUM)]
-        posts[0].favorited_by = [user, user2]
-        posts[1].favorited_by = [user]
-        posts[2].favorited_by = [user2]
+        posts = [
+            Post(**self.post, owner_id=user.id, created_at=dt.now())
+            for _ in range(POSTS_NUM)
+        ]
+        posts[-1].favorited_by = [user, user2]
+        posts[-2].favorited_by = [user]
+        posts[-3].favorited_by = [user2]
         [post.save() for post in posts]
 
-        res = self.authorized_get(
-            '/posts',
-            user
-        )
+        res = self.authorized_get('/posts', user)
 
         data = res.json
         self.assertEqual(res.status_code, 200)
@@ -85,8 +86,8 @@ class PostTest(AuthorizedTestCase):
             ],
         }
         self.assertEqual(favorites, {
-            'is_favorited': [True, True, False] + [False]*2,
-            'favorites_count': [2, 1, 1] + [0]*2
+            'is_favorited': [True, True, False] + [False]*3,
+            'favorites_count': [2, 1, 1] + [0]*3
         })
 
     def test_posts_by_user_retrieved(self):
@@ -113,7 +114,7 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(data), 2)
         self.assertEqual(authors, [user.id]*2)
-        self.assertEqual(posts_ids, [post1.id, post3.id])
+        self.assertEqual(posts_ids, [post3.id, post1.id])
 
     def test_favorites_retrieved(self):
         user = User(**self.user)
@@ -142,7 +143,7 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(len(data), 2)
         self.assertEqual(authors, [user.id]*2)
-        self.assertEqual(posts_ids, [post1.id, post3.id])
+        self.assertEqual(posts_ids, [post3.id, post1.id])
 
     def test_post_not_found(self):
         res = self.client.get(f"/posts/1")

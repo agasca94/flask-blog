@@ -1,14 +1,13 @@
 from flask import request as req
 from flask_restful import Resource
-from flask_jwt_extended import create_access_token, current_user, \
-    jwt_required, jwt_optional
+from flask_jwt_extended import create_access_token, current_user, jwt_required
 from src.models import User, Post, Comment
 from src.exceptions import InvalidUsage
 from src.schemas import login_schema, user_schema, UserSchema, \
     post_schema, posts_schema,\
     comment_schema, comments_schema
 from src.middlewares import validate_with_schema, \
-    marshal_with_schema, dynamic_marshal_with_schema
+    marshal_with_schema, dynamic_marshal_with_schema, valid_jwt_optional
 
 
 class UserResource(Resource):
@@ -79,10 +78,10 @@ class PostsResource(Resource):
 
         return post
 
-    @jwt_optional
+    @valid_jwt_optional
     @marshal_with_schema(posts_schema, paginate=True)
     def get(self):
-        POSTS_PER_PAGE = 5
+        POSTS_PER_PAGE = 6
         page = req.args.get('page', 1, int)
         posts = Post.query. \
             order_by(Post.created_at.desc()). \
@@ -93,7 +92,7 @@ class PostsResource(Resource):
 
 class PostsByUserResource(Resource):
 
-    @jwt_optional
+    @valid_jwt_optional
     @marshal_with_schema(posts_schema)
     def get(self, username):
         user = User.get_by_username(username)
@@ -109,9 +108,9 @@ class PostsByUserResource(Resource):
 
 class FavoritePostsByUserResource(Resource):
 
-    @jwt_optional
+    @valid_jwt_optional
     @marshal_with_schema(posts_schema)
-    def get(self, username):
+    def get(self, username): 
         user = User.get_by_username(username)
         if not user:
             raise InvalidUsage(404, 'User not found')
@@ -123,7 +122,7 @@ class FavoritePostsByUserResource(Resource):
 
 
 class PostResource(Resource):
-    @jwt_optional
+    @valid_jwt_optional
     @marshal_with_schema(post_schema)
     def get(self, post_id):
         post = Post.get_one(post_id)
@@ -194,7 +193,7 @@ class CommentsResource(Resource):
         post = Post.get_one(post_id)
         if not post:
             raise InvalidUsage(404, 'Post not found')
-        comment = Comment(post.id, author_id=current_user.id, **data)
+        comment = Comment(post_id=post.id, author_id=current_user.id, **data)
         comment.save()
 
         return comment

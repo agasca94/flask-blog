@@ -1,6 +1,7 @@
 from flask import request, Response
 from marshmallow import ValidationError
 from functools import wraps
+from flask_jwt_extended import verify_jwt_in_request_optional
 from src.exceptions import InvalidUsage
 from src.schemas import get_pagination_schema
 
@@ -71,14 +72,12 @@ def dynamic_marshal_with_schema(
     return decorator
 
 
-def log_sqlalchemy(func):
-    @wraps(func)
-    def inner(*data, **kwargs):
-        import logging
-        logging.basicConfig()
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-        res = func(*data, **kwargs)
-        logging.disable()
-
-        return res
+def valid_jwt_optional(fn):
+    @wraps(fn)
+    def inner(*args, **kwargs):
+        try:
+            verify_jwt_in_request_optional()
+        except Exception:
+            pass  # Ignore if the request contains an invalid or expired token
+        return fn(*args, **kwargs)
     return inner

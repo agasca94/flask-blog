@@ -132,12 +132,6 @@ class Post(db.Model):
         db.DateTime, nullable=False, default=dt.datetime.now
     )
 
-    def __init__(self, title, description, contents, owner_id):
-        self.title = title
-        self.description = description
-        self.contents = contents
-        self.owner_id = owner_id
-
     def save(self):
         self.modified_at = dt.datetime.now()
         db.session.add(self)
@@ -210,11 +204,6 @@ class Comment(db.Model):
     modified_at = db.Column(
         db.DateTime, nullable=False, default=dt.datetime.now
     )
-
-    def __init__(self, post_id, contents, author_id):
-        self.post_id = post_id
-        self.contents = contents
-        self.author_id = author_id
 
     def save(self):
         self.modified_at = dt.datetime.now()
