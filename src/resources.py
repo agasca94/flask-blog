@@ -61,8 +61,8 @@ class UserMe(Resource):
         UPLOADS_FOLDER = current_app.config['UPLOADS_FOLDER']
         user = current_user
 
-        if 'avatar' in req.files:
-            file = req.files['avatar']
+        if 'picture' in req.files:
+            file = req.files['picture']
             filename = save_file(file, UPLOADS_FOLDER)
             data['avatar'] = filename
 

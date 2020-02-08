@@ -5,7 +5,7 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
-UPLOAD_FOLDER = './src/static/'
+UPLOAD_FOLDER = './src/static/uploads/'
 TEST_UPLOAD_FOLDER = './src/static/testing/'
 
 

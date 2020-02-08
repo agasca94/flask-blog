@@ -16,6 +16,8 @@ _mailinglist
 .idea/
 docs/_build/
 
+src/static/uploads/
+
 # Coverage reports
 htmlcov/
 .coverage
