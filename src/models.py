@@ -1,5 +1,6 @@
 import datetime as dt
 from sqlalchemy import select, func, bindparam
+from flask import url_for
 from sqlalchemy.orm import column_property, aliased
 from sqlalchemy.ext.hybrid import hybrid_property
 from flask_jwt_extended import current_user
@@ -27,6 +28,7 @@ class User(db.Model):
     username = db.Column(db.String(128), nullable=False, unique=True)
     email = db.Column(db.String(128), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=True)
+    avatar = db.Column(db.String(300), nullable=True)
     posts = db.relationship(
         'Post',
         # Eager load the author of each post using an INNER JOIN
@@ -48,11 +50,12 @@ class User(db.Model):
         db.DateTime, nullable=False, default=dt.datetime.now
     )
 
-    def __init__(self, name, username, email, password, bio=''):
+    def __init__(self, name, username, email, password, bio='', avatar=''):
         self.name = name
         self.email = email
         self.username = username
         self.bio = bio
+        self.avatar = avatar
         self.set_password(password)
 
     def save(self):
@@ -87,6 +90,12 @@ class User(db.Model):
     @staticmethod
     def get_by_username(username):
         return User.query.filter_by(username=username).first()
+
+    @property
+    def picture(self):
+        if self.avatar:
+            return url_for('static', filename=self.avatar, _external=True)
+        return None
 
     def set_password(self, password):
         self.password = bcrypt.generate_password_hash(

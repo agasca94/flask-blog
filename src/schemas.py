@@ -26,6 +26,7 @@ class UserSchema(Schema):
     email = fields.Email(required=True)
     password = fields.Str(required=True, load_only=True)
     token = fields.Str(dump_only=True)
+    picture = fields.Str(dump_only=True)
     posts = fields.Nested(PostSchema(exclude=('author',)), many=True)
 
 
