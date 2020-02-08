@@ -1,6 +1,10 @@
 import unittest
 from src.tests.base import BaseTestCase, AuthorizedTestCase
 from src.models import User, Post
+import io
+import os
+import tempfile
+from flask import current_app
 
 
 class AuthTest(BaseTestCase):
@@ -75,6 +79,16 @@ class AuthTest(BaseTestCase):
 
 
 class UserTest(AuthorizedTestCase):
+    def tearDown(self):
+        super().tearDown()
+        UPLOADS_FOLDER = current_app.config['UPLOADS_FOLDER']
+        filelist = [
+            f for f in os.listdir(UPLOADS_FOLDER)
+            if not f.endswith(".gitignore")
+        ]
+        for f in filelist:
+            os.remove(os.path.join(UPLOADS_FOLDER, f))
+
     def test_user_profile(self):
         user = User(**self.user)
         user.save()
@@ -84,7 +98,8 @@ class UserTest(AuthorizedTestCase):
             'username': user.username,
             'name': user.name,
             'email': user.email,
-            'bio': user.bio
+            'bio': user.bio,
+            'picture': None
         })
 
     def test_user_profile_not_found(self):
@@ -104,7 +119,8 @@ class UserTest(AuthorizedTestCase):
             'name': user.name,
             'username': user.username,
             'email': user.email,
-            'bio': user.bio
+            'bio': user.bio,
+            'picture': None
         })
 
     def test_user_get_me_with_posts(self):
@@ -127,6 +143,37 @@ class UserTest(AuthorizedTestCase):
         self.assertEqual(posts[0]['title'], post.title)
         self.assertEqual(posts[0]['description'], post.description)
         self.assertEqual(posts[0]['contents'], post.contents)
+
+    def test_user_updated(self):
+        UPLOADS_FOLDER = current_app.config['UPLOADS_FOLDER']
+        temp = tempfile.NamedTemporaryFile(
+            dir=UPLOADS_FOLDER,
+            delete=False
+        )
+        old_avatar = temp.name.split('/')[-1]
+        user = User(**self.user, avatar=old_avatar)
+        user.save()
+        new_data = {
+            'name': 'New user',
+            'bio': 'Something new',
+            'avatar': (io.BytesIO(b"abcdef"), 'test.jpg')
+        }
+        res = self.authorized_put(
+            '/me',
+            user,
+            data=new_data,
+            content_type='multipart/form-data'
+        )
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json['name'], new_data['name'])
+        self.assertEqual(res.json['bio'], new_data['bio'])
+        self.assertEqual(res.json['picture'], user.picture)
+        self.assertTrue(os.path.exists(
+            os.path.join(UPLOADS_FOLDER, user.avatar)
+        ))
+        self.assertFalse(os.path.exists(
+            os.path.join(UPLOADS_FOLDER, old_avatar)
+        ))
 
     def test_user_not_authenticated(self):
         res = self.client.get('/me')

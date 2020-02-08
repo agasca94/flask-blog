@@ -94,7 +94,11 @@ class User(db.Model):
     @property
     def picture(self):
         if self.avatar:
-            return url_for('static', filename=self.avatar, _external=True)
+            return url_for(
+                'static',
+                filename=f"uploads/{self.avatar}",
+                _external=True
+            )
         return None
 
     def set_password(self, password):
