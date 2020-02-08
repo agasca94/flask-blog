@@ -6,18 +6,29 @@ from src.exceptions import InvalidUsage
 from src.schemas import get_pagination_schema
 
 
-def validate_with_schema(schema, error_msg='Invalid data', **kwargs):
+def validate_with_schema(
+    schema,
+    error_msg='Invalid data',
+    source='json',
+    **kwargs
+):
     def decorator(func):
         @wraps(func)
         def inner(*args, **kkwargs):
-            # Deserialize and validate incoming data
-            req_data = request.get_json()
+            # Retrieve json encoded or form data
+            if source == 'json':
+                req_data = request.get_json()
+            elif source == 'form':
+                req_data = request.form
 
+            # Deserialize and validate incoming data
             try:
                 data = schema.load(req_data, **kwargs)
             except ValidationError as err:
                 raise InvalidUsage(422, error_msg, err.messages)
+
             kkwargs['data'] = data
+
             return func(*args, **kkwargs)
         return inner
     return decorator
