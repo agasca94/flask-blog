@@ -3,6 +3,7 @@ from sqlalchemy import select, func, bindparam
 from flask import url_for
 from sqlalchemy.orm import column_property, aliased
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.dialects.postgresql import ARRAY
 from flask_jwt_extended import current_user
 from src.extensions import db, bcrypt
 
@@ -121,6 +122,7 @@ class Post(db.Model):
     title = db.Column(db.String(128), nullable=False)
     description = db.Column(db.Text, nullable=False)
     contents = db.Column(db.Text, nullable=False)
+    tags = db.Column(ARRAY(db.String))
     comments = db.relationship(
         'Comment',
         backref='post',

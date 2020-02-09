@@ -11,6 +11,7 @@ class PostSchema(Schema):
     modified_at = fields.DateTime(dump_only=True)
     favorites_count = fields.Int(dump_only=True)
     is_favorited = fields.Boolean(dump_only=True)
+    tags = fields.List(fields.Str(), required=False)
 
 
 class LoginSchema(Schema):
