@@ -10,7 +10,8 @@ class PostTest(AuthorizedTestCase):
         self.post = {
             'title': 'Test Post',
             'description': 'Test description',
-            'contents': 'Test contents'
+            'contents': 'Test contents',
+            'tags': ['js', 'python']
         }
 
     def test_post_created(self):
@@ -29,6 +30,7 @@ class PostTest(AuthorizedTestCase):
         self.assertEqual(data['description'], self.post['description'])
         self.assertEqual(data['contents'], self.post['contents'])
         self.assertEqual(data['author']['id'], user.id)
+        self.assertEqual(data['tags'], self.post['tags'])
 
     def test_post_retrieved(self):
         user = User(**self.user)

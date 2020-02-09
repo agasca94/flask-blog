@@ -6,7 +6,7 @@ from src.exceptions import InvalidUsage, error_handler
 from src.resources import UserRegister, UserLogin, UserMe, UserResource, \
     PostsResource, PostResource, PostsByUserResource, \
     CommentsResource, CommentResource, \
-    FavoriteResource, FavoritePostsByUserResource
+    FavoriteResource, FavoritePostsByUserResource, TagResource
 
 
 def create_app(env_name):
@@ -29,6 +29,7 @@ def create_app(env_name):
         FavoritePostsByUserResource,
         '/@<string:username>/favorites'
     )
+    api.add_resource(TagResource, '/tags')
     api.add_resource(PostsResource, '/posts')
     api.add_resource(PostResource, '/posts/<int:post_id>')
     api.add_resource(FavoriteResource, '/posts/<int:post_id>/favorite')

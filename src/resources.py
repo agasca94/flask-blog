@@ -1,7 +1,9 @@
 from flask import request as req, current_app
 from flask_restful import Resource
 from flask_jwt_extended import create_access_token, current_user, jwt_required
+from sqlalchemy import select, func
 from src.models import User, Post, Comment
+from src.extensions import db
 from src.exceptions import InvalidUsage
 from src.utils import save_file, delete_file
 from src.schemas import login_schema, user_schema, UserSchema, \
@@ -77,6 +79,27 @@ class UserMe(Resource):
     @dynamic_marshal_with_schema(UserSchema, default_excluded=['posts'])
     def get(self):
         return current_user
+
+
+class TagResource(Resource):
+    def get(self):
+        sub = db.session.query(
+            func.unnest(Post.tags).label('tag')
+        ).subquery()
+
+        q = select([
+            sub.c.tag,
+            func.count(sub.c.tag)
+        ]).select_from(
+            sub
+        ).group_by(sub.c.tag).order_by(
+            func.count(sub.c.tag).desc(),
+            sub.c.tag
+        )
+
+        tags = db.session.execute(q)
+
+        return [tag for tag, c in tags]
 
 
 class PostsResource(Resource):

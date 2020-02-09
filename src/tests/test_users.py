@@ -156,7 +156,7 @@ class UserTest(AuthorizedTestCase):
         new_data = {
             'name': 'New user',
             'bio': 'Something new',
-            'avatar': (io.BytesIO(b"abcdef"), 'test.jpg')
+            'picture': (io.BytesIO(b"abcdef"), 'test.jpg')
         }
         res = self.authorized_put(
             '/me',
