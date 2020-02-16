@@ -92,6 +92,28 @@ class PostTest(AuthorizedTestCase):
             'favorites_count': [2, 1, 1] + [0]*3
         })
 
+    def test_tagged_posts_retrieved(self):
+        user = User(**self.user)
+        user.save()
+        post = Post(**self.post, owner_id=user.id)
+        post.tags = ['aws']
+        post.save()
+        post = Post(**self.post, owner_id=user.id)
+        post.tags = ['aws', 'python']
+        post.save()
+        post = Post(**self.post, owner_id=user.id)
+        post.tags = ['azure']
+        post.save()
+        post = Post(**self.post, owner_id=user.id)
+        post.tags = ['js', 'ruby']
+        post.save()
+
+        res = self.client.get('/posts?tag=aws')
+
+        data = res.json
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(len(data['data']), 2)
+
     def test_posts_by_user_retrieved(self):
         user = User(**self.user)
         user.save()
